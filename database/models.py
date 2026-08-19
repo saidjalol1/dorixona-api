@@ -19,6 +19,7 @@ class Drug(Base):
     __tablename__ = "drugs"
 
     id = Column(Integer, primary_key=True)
+    name = Column(String, default="")
     amount = Column(Integer, default=0)
     base_price = Column(Float, default=0)
     sell_price = Column(Float, default=0)
