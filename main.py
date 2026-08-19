@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from database.models import Base, Users
 from database.config import engine, get_db
-from database.schemas import UserData
+from database.schemas import UserData, UserUpdate
 
 app = FastAPI()
 
@@ -37,81 +37,43 @@ def user_register(user_data: UserData, db=Depends(get_db)):
             "error": str(error)
         }
 
-@app.get("/users")
-def get_users(db=Depends(get_db)):
-    users = db.query(Users).all()
-
-    return {
-        "message": "Fetched Users!",
-        "data": users,
-        "success": True
-    }
 
 
-@app.get("/users/{user_id}")
-def get_user(user_id: int, db=Depends(get_db)):
-    user = db.query(Users).filter(Users.id == user_id).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
-    return {
-        "message": "Fetched User!",
-        "data": user,
-        "success": True
-    }
+@app.get("/users/")
+def get_all_users(user_id: int, db = Depends(get_db)):
+    requesting_user = db.query(Users).filter(Users.id == user_id).first()
+    if requesting_user.role == "admin":
+        users = db.query(Users).all()
+        return {"message": "User accounts fetched succesfully !", "success":True, "data":users}
+    else:
+        return {"message": "You have no acces to this route ! Because you are not admin rights !", "succes":False, "data":{}}
 
 
-@app.put("/users/{user_id}")
-def update_user(
-    user_id: int,
-    user_data: UserData,
-    db=Depends(get_db)
-):
-    user = db.query(Users).filter(Users.id == user_id).first()
+@app.delete("/user-delete/")
+def delete_user(delete_user_id: int,admin_user_id: int, db = Depends(get_db)):
+    admin_user = db.query(Users).filter(Users.id == admin_user_id).first()
+    if admin_user.role == "admin":
+        delete_user = db.query(Users).filter(Users.id == delete_user_id).first()
+        db.delete(delete_user)
+        db.commit()
+        return {"message": "User deleted succesfully !", "success": True}
+    else:
+        return {"message": "You have no access to this route !, you are not admin" }
 
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
+@app.put("/user-account-update/")
+def account_update(admin_id: int,user_data: UserUpdate, db = Depends(get_db)):
+    admin_user = db.query(Users).filter(Users.id == admin_id).first()
+    if admin_user.role == "admin":
 
-    user.username = user_data.username
-    user.password = user_data.password
-    user.full_name = user_data.full_name
-    user.role = user_data.role
+        user = db.query(Users).filter(Users.id == user_data.id).first()
 
-    db.commit()
-    db.refresh(user)
+        new_user = user_data.model_dump(exclude_unset=True)
 
-    return {
-        "message": "User updated!",
-        "data": user,
-        "success": True
-    }
-
-
-#
-@app.delete("/users/{user_id}")
-def delete_user(user_id: int, db=Depends(get_db)):
-    user = db.query(Users).filter(Users.id == user_id).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
-    db.delete(user)
-    db.commit()
-
-    return {
-        "message": "User deleted!",
-        "success": True
-    }
-
-
-
+        for key, value in new_user.items():
+            setattr(user, key, value)
+        db.commit()
+        db.refresh(user)
+        return {"message": "User updated !", "success":True, "data":user}   
+    else:
+        return {"message": "You have no access to this route !"}
+    
