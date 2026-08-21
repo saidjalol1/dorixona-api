@@ -27,3 +27,14 @@ class DrugCreate(BaseModel):
     amount: int
     base_price: float
     sell_price: float 
+
+
+class DrugEnter(BaseModel):
+    id : int
+    amount : int
+
+class DrugUpdateData(BaseModel):
+    id : int
+    name: str | None = None
+    base_price : float | None = None
+    sell_price : float | None = None
