@@ -75,6 +75,7 @@ def account_update(admin_id:int,user_data: UserUpdate, db = Depends(get_db)):
 
         db.commit()
         db.refresh(user)
+
         
         return {"message":"User updated!", "success":True, "data":user}
     else:
