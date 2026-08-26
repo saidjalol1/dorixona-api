@@ -1,11 +1,26 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from database.models import Base, Users
 from database.config import engine, get_db
 from database.schemas import UserData, UserUpdate
 
 from routes.drugs_route import drug_route
 
+# CORS -> Cross - origin resouce sharing 
+# http://127.0.0.1:8000
+
+# http://localhost:3000
+# https://localhost:3000
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["GET", "POST"],
+    allow_credentials=True
+)
 
 app.include_router(drug_route)
 
